@@ -208,6 +208,29 @@ open class OpenGlView : SurfaceView, GlInterface, OnFrameAvailableListener, Surf
         this.takePhotoCallback = takePhotoCallback
     }
 
+    /**
+     * ⚡ Capture RGBA ByteBuffer directly from OpenGL (for AI inference)
+     * This is faster than takePhoto() because it skips Bitmap creation
+     * @param callback callback to receive RGBA ByteBuffer
+     */
+    fun captureRGBABuffer(callback: (java.nio.ByteBuffer?) -> Unit) {
+        executor?.execute {
+            try {
+                if (surfaceManagerPhoto.isReady && mainRender.isReady()) {
+                    surfaceManagerPhoto.makeCurrent()
+                    mainRender.drawScreen(encoderWidth, encoderHeight, aspectRatioMode, streamRotation, isStreamVerticalFlip, isStreamHorizontalFlip, null)
+                    val buffer = GlUtil.getRGBABuffer(encoderWidth, encoderHeight)
+                    surfaceManagerPhoto.swapBuffer()
+                    callback(buffer)
+                } else {
+                    callback(null)
+                }
+            } catch (e: Exception) {
+                callback(null)
+            }
+        }
+    }
+
     private fun draw(forced: Boolean) {
         if (!isRunning) return
         val limitFps = fpsLimiter.limitFPS()

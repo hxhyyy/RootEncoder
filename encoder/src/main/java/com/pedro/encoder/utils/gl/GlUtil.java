@@ -28,6 +28,9 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -152,6 +155,23 @@ public class GlUtil {
     //Scale to stream resolution
     //Flip vertical
     return flipVerticalBitmap(bitmap, streamWidth, streamHeight);
+  }
+
+  /**
+   * ⚡ Get RGBA ByteBuffer directly from OpenGL (for AI inference)
+   * This is faster than getBitmap() because it skips Bitmap creation
+   * @param streamWidth width of the frame
+   * @param streamHeight height of the frame
+   * @return ByteBuffer containing RGBA data (direct buffer, native order)
+   */
+  public static ByteBuffer getRGBABuffer(int streamWidth, int streamHeight) {
+    //Get opengl buffer
+    ByteBuffer buffer = ByteBuffer.allocateDirect(streamWidth * streamHeight * 4);
+    buffer.order(ByteOrder.nativeOrder());
+    GLES20.glReadPixels(0, 0, streamWidth, streamHeight, GLES20.GL_RGBA,
+        GLES20.GL_UNSIGNED_BYTE, buffer);
+    buffer.rewind();
+    return buffer;
   }
 
   private static Bitmap flipVerticalBitmap(Bitmap bitmap, int width, int height) {
