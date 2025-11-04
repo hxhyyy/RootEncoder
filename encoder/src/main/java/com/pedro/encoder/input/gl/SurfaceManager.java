@@ -184,6 +184,22 @@ public class SurfaceManager {
   }
 
   /**
+   * Release only the EGL surface, keeping the context alive.
+   * This is useful when you want to remove a specific surface (e.g., recording surface)
+   * without affecting other surfaces that share the same context (e.g., preview surface).
+   */
+  public void releaseSurface() {
+    if (eglDisplay != EGL14.EGL_NO_DISPLAY && eglSurface != EGL14.EGL_NO_SURFACE) {
+      EGL14.eglDestroySurface(eglDisplay, eglSurface);
+      Log.i(TAG, "GL surface released (context kept alive)");
+      eglSurface = EGL14.EGL_NO_SURFACE;
+      isReady.set(false);
+    } else {
+      Log.e(TAG, "GL surface already released or not initialized");
+    }
+  }
+
+  /**
    * Discards all resources held by this class, notably the EGL context.
    */
   public void release() {
