@@ -5,6 +5,7 @@ import com.pedro.common.socket.base.UdpType
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
+import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.SocketOptions
 
@@ -22,13 +23,34 @@ class UdpStreamSocketJava(
     override suspend fun connect() {
         val socket = when (type) {
             UdpType.UNICAST -> {
-                sourcePort?.let { DatagramSocket(sourcePort) } ?: DatagramSocket()
+                if (sourcePort != null) {
+                    DatagramSocket(null).apply {
+                        reuseAddress = true  // 🐾 Enable SO_REUSEADDR for port reuse
+                        bind(InetSocketAddress(sourcePort))
+                    }
+                } else {
+                    DatagramSocket()
+                }
             }
             UdpType.MULTICAST -> {
-                sourcePort?.let { MulticastSocket(sourcePort) } ?: MulticastSocket()
+                if (sourcePort != null) {
+                    MulticastSocket(null).apply {
+                        reuseAddress = true  // 🐾 Enable SO_REUSEADDR for port reuse
+                        bind(InetSocketAddress(sourcePort))
+                    }
+                } else {
+                    MulticastSocket()
+                }
             }
             UdpType.BROADCAST -> {
-                val socket = sourcePort?.let { DatagramSocket(sourcePort) } ?: DatagramSocket()
+                val socket = if (sourcePort != null) {
+                    DatagramSocket(null).apply {
+                        reuseAddress = true  // 🐾 Enable SO_REUSEADDR for port reuse
+                        bind(InetSocketAddress(sourcePort))
+                    }
+                } else {
+                    DatagramSocket()
+                }
                 socket.apply { broadcast = true }
             }
         }
